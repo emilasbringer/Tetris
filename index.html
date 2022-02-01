@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris</title>
+</head>
+<body>
+    <canvas id="myCanvas" width="450" height="600"></canvas>
+</body>
+
+<style>
+    body {
+        margin: 0;
+        background-image: url('/tetris.jpg');
+    }
+    #myCanvas {
+        background-color: #b4b4b475;
+        position: absolute;
+        border: 4px black solid;
+    }
+</style>
+
+<script>  
+let canvas = document.querySelector("#myCanvas");
+let ctx = canvas.getContext("2d");
+
+let centerPage = window.innerWidth/2;
+let cellSize = 25;
+let width = 450;
+let height = 600;
+let xArray = [];
+
+for (let i = 0; i < width/cellSize; i++) {
+    xArray[i] = [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0];
+}
+console.log(xArray);
+myCanvas.style.left = centerPage - 225 + "px";
+myCanvas.style.top = 100 + "px";
+
+
+xArray[0][0] = 1;
+
+let renderLoop = setInterval(() => {
+    for (let x = 0; x < width/cellSize; x++) {
+        for (let y = 0; y < height/cellSize; y++) {
+            if (xArray[x][y] == 0) {
+                ctx.fillStyle = 'black'; 
+                ctx.fillRect(cellSize*x,cellSize*y,cellSize,cellSize);
+            }
+            if (xArray[x][y] == 1) {
+                ctx.fillStyle = 'white'; 
+                ctx.fillRect(cellSize*x,cellSize*y,cellSize,cellSize);
+            } 
+        }
+    }
+}, 1000/60);
+
+
+function createShapeSquare() {
+    
+}
+
+
+</script>
+</html>
