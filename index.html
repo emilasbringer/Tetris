@@ -9,9 +9,15 @@
 </head>
 <body onkeydown="keyDown(event)" onkeyup="keyUp(event)">
     <canvas id="myCanvas" width="450" height="600"></canvas>
+    <div id="pointCounter">
+        <p>Score</p> 
+        <span id="score">0</span>
+    </div>
+    <canvas id="nextShapeCanvas" width="125" height="300"></canvas>
 </body>
 
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Teko&display=swap');
     body {
         margin: 0;
         background-image: url('/tetris.jpg');
@@ -21,273 +27,22 @@
         position: absolute;
         border: 4px black solid;
     }
+    #pointCounter {
+        font-family: 'Share Tech Mono', monospace;
+        position: absolute;
+        background: rgb(69, 171, 255);
+        border:4px solid black;
+        width: 100px;
+        height: 80px;
+        text-align: center;
+    }
+    #nextShapeCanvas {
+        position: absolute;
+        border: 4px black solid;
+    }
 </style>
 
-<script>  
-let canvas = document.querySelector("#myCanvas");
-let ctx = canvas.getContext("2d");
-
-let centerPage = window.innerWidth/2;
-let cellSize = 25;
-let width = 450;
-let height = 600;
-let fps = 60;
-let ups = 60;
-let xArray = [];
-let shapes = ["square", "lblock", "mirroredlblock", "tblock", "sblock", "mirroredsblock", "straightblock"]
-let currentShape = "";
-let shapeHasLanded = true;
-let shapeCoords = [0,0];
-let LEFT,RIGHT,DOWN,SPACE;
-LEFT=RIGHT=DOWN=SPACE=false;
-let pressedKey = [LEFT,RIGHT,DOWN,SPACE];
-let downCounter = 0;
-let finalTurnCounter = 0;
-let allowMovement = true;
-let movingDown = true;
-let fastFall = false;
-let fastMoveCounter = 0;
-let allowFastFall = true;
-let insuranceCounter = 0;
-
-for (let i = 0; i < width/cellSize; i++) {
-    xArray[i] = [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0];
-}
-
-myCanvas.style.left = centerPage - 225 + "px";
-myCanvas.style.top = 100 + "px";
-
-randomShape();
-createShape(currentShape);
-shapeHasLanded = false;
-
-let renderLoop = setInterval(() => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let x = 0; x < width/cellSize; x++) {
-        for (let y = 0; y < height/cellSize; y++) {
-            if (xArray[x][y] == 0) {
-                ctx.globalAlpha = 0.1;
-                ctx.fillStyle = "rgba(20, 20, 20)";
-                ctx.fillRect(cellSize*x,cellSize*y,cellSize,cellSize);
-            }
-            if (xArray[x][y] == 1) {
-                ctx.globalAlpha = 1;
-                ctx.fillStyle = 'white'; 
-                ctx.fillRect(cellSize*x,cellSize*y,cellSize,cellSize);
-            }
-            if (xArray[x][y] > 1) {
-                ctx.globalAlpha = 1;
-                ctx.fillStyle = "rgb(255, 64, 0)";
-                ctx.strokeStyle = "white";
-                ctx.lineWidth = 0.3;
-                ctx.fillRect(cellSize*x,cellSize*y,cellSize,cellSize);
-                ctx.strokeRect(cellSize*x,cellSize*y,cellSize,cellSize);
-            } 
-        }
-    }
-}, 1000/fps);
-
-let updateLoop = setInterval(() => {
-    if (!shapeHasLanded) {
-        //Next Shape
-        if (!movingDown) {
-            console.log("Not moving down in master");
-            finalTurnCounter++;
-            if (finalTurnCounter > ups || fastFall) {
-                shapeHasLanded = true;
-                fastFall = false;
-                finalTurnCounter = 0;
-            }
-        }
-
-        //Move down every second
-        if (downCounter > ups) {
-            downCounter = 0;
-            if (currentShape == "square") {
-                if (shapeCoords[1] < 22 && xArray[shapeCoords[0]][shapeCoords[1]+2] == 0 && xArray[shapeCoords[0]+1][shapeCoords[1]+2] == 0) {
-                    //Move down
-                    movingDown = true;
-                    shapeCoords[1] += 1;
-                    //Fill new coords
-                    xArray[shapeCoords[0]][shapeCoords[1]] = 2;
-                    xArray[shapeCoords[0]+1][shapeCoords[1]] = 2;
-                    xArray[shapeCoords[0]][shapeCoords[1]+1] = 2;
-                    xArray[shapeCoords[0]+1][shapeCoords[1]+1] = 2;
-
-                    //Remove previous coords
-                    if (xArray[shapeCoords[0]][shapeCoords[1]-1] == 2) {
-                        xArray[shapeCoords[0]][shapeCoords[1]-1] = 0;
-                    }
-
-                    if (xArray[shapeCoords[0]+1][shapeCoords[1]-1] == 2) {
-                        xArray[shapeCoords[0]+1][shapeCoords[1]-1] = 0;
-                    }
-
-                }
-                else {
-                    movingDown = false;
-                    console.log("No movement detected in for square");
-                }
-            }
-        }
-        downCounter++;
-
-        if (allowMovement) {      
-            if (pressedKey[0] || pressedKey[1])  {
-                console.log("Pressing leftorright");
-                fastMoveCounter++;
-                if (fastMoveCounter == 2 || fastMoveCounter > 100) {
-                    //If pressing left
-                    if (pressedKey[0] && shapeCoords[0] > 0) {
-                        //If empty space
-                        if (xArray[shapeCoords[0]-1][shapeCoords[1]] == 0 && xArray[shapeCoords[0]-1][shapeCoords[1]+1] == 0) {
-                            //Move left
-                            shapeCoords[0] -= 1;
-                            //Fill left coords
-                            xArray[shapeCoords[0]][shapeCoords[1]] = 2;
-                            xArray[shapeCoords[0]][shapeCoords[1]+1] = 2;
-                            //Remove previous coords
-                            if (xArray[shapeCoords[0]+2][shapeCoords[1]] == 2) {
-                                xArray[shapeCoords[0]+2][shapeCoords[1]] = 0;
-                            }
-                            if (xArray[shapeCoords[0]+2][shapeCoords[1]+1] == 2) {
-                                xArray[shapeCoords[0]+2][shapeCoords[1]+1] = 0;
-                            }
-                        }
-                    }
-                    //If pressing right
-                    if (pressedKey[1] && shapeCoords[0] < 16) {
-                        //If empty space
-                        if (xArray[shapeCoords[0]+2][shapeCoords[1]] == 0 && xArray[shapeCoords[0]+2][shapeCoords[1]+1] == 0) {
-                            //Move right
-                            shapeCoords[0] += 1;
-                            //Fill right coords
-                            xArray[shapeCoords[0]+1][shapeCoords[1]] = 2;
-                            xArray[shapeCoords[0]+1][shapeCoords[1]+1] = 2;
-                            //Remove previous coords
-                            if (xArray[shapeCoords[0]-1][shapeCoords[1]] == 2) {
-                                xArray[shapeCoords[0]-1][shapeCoords[1]] = 0;
-                            }
-                            if (xArray[shapeCoords[0]-1][shapeCoords[1]+1] == 2) {
-                                xArray[shapeCoords[0]-1][shapeCoords[1]+1] = 0;
-                            }
-                        }
-                    }
-                    //If pressing down
-                    if (pressedKey[2]) {
-                        downCounter = ups+1;
-                    }
-                    //If pressing space
-                    if (pressedKey[3] && allowFastFall) {
-                        fastFall = true;
-                        allowFastFall = false;
-                        console.log("Engaging fastfall");
-                    }
-                }
-            }
-        }  
-    }
-
-    else {
-        randomShape();
-        createShape(currentShape)
-        shapeHasLanded = false;
-    }
-    while (fastFall) {
-        console.log("Fastfalling");
-        //Move down instantly
-        if (currentShape == "square") {
-            if (shapeCoords[1] < 22 && xArray[shapeCoords[0]][shapeCoords[1]+2] == 0 && xArray[shapeCoords[0]+1][shapeCoords[1]+2] == 0) {
-                //Move down
-                movingDown = true;
-                shapeCoords[1] += 1;
-            
-                //Fill new coords
-                xArray[shapeCoords[0]][shapeCoords[1]] = 2;
-                xArray[shapeCoords[0]+1][shapeCoords[1]] = 2;
-                xArray[shapeCoords[0]][shapeCoords[1]+1] = 2;
-                xArray[shapeCoords[0]+1][shapeCoords[1]+1] = 2;
-                //Remove previous coords
-                if (xArray[shapeCoords[0]][shapeCoords[1]-1] == 2) {
-                    xArray[shapeCoords[0]][shapeCoords[1]-1] = 0;
-                }
-                if (xArray[shapeCoords[0]+1][shapeCoords[1]-1] == 2) {
-                    xArray[shapeCoords[0]+1][shapeCoords[1]-1] = 0;
-                }
-            }
-            else {
-                movingDown = false;
-                console.log("Not moving down in fastfall");
-            }
-        }
-        insuranceCounter++;
-        if (insuranceCounter > 1000) {
-            fastFall = false;
-            console.log("Timed out");
-        }
-        if (fastFall && !movingDown) {
-            shapeHasLanded = true;
-            fastFall = false;
-            finalTurnCounter = 0;
-        }
-    }
-}, 1000/ups);
-
-
-
-function keyDown(event) {
-    if (event.keyCode == 37) {
-        pressedKey[0] = true;
-    }
-    if (event.keyCode == 39) {
-        pressedKey[1] = true;
-    }
-    if (event.keyCode == 40) {
-        pressedKey[2] = true;
-    }
-    if (event.keyCode == 32) {
-        pressedKey[3] = true;
-    }
-}
-
-function keyUp(event) {
-    if (event.keyCode == 37) {
-        pressedKey[0] = false;;
-    }
-    if (event.keyCode == 39) {
-        pressedKey[1] = false;
-    }
-    if (event.keyCode == 40) {
-        pressedKey[2] = false;
-    }
-    if (event.keyCode == 32) {
-        pressedKey[3] = false;
-        allowFastFall = true;
-    }
-}
-
-function randomShape() {
-    let randomNumber = Math.floor(Math.random() * 1);
-    currentShape = shapes[randomNumber];
-}
-
-function createShape(shape) {
-    console.log("Creating new shape = " + shape);
-    shapeCoords[0] = 8;
-    shapeCoords[1] = 0;
-    movingDown = true;
-    
-    if (shape == "square") {
-        let blocksInShape = 4;
-        xArray[shapeCoords[0]][shapeCoords[1]] = 2;
-        xArray[shapeCoords[0]+1][shapeCoords[1]] = 2;
-        xArray[shapeCoords[0]][shapeCoords[1]+1] = 2;
-        xArray[shapeCoords[0]+1][shapeCoords[1]+1] = 2;
-    }
-}
-
-
-
+<script src="/script.js">  
 
 </script>
 </html>
