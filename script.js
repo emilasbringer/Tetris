@@ -16,7 +16,7 @@ let shapes = ["square", "lblock", "mirroredlblock", "tblock", "sblock", "mirrore
 let currentShape = "";
 let shapeHasLanded = true;
 let shapeCoords = [0,0];
-let previewShapeChords = [0,0];
+let previewShapeCoords = [0,0];
 let LEFT,RIGHT,DOWN,SPACE;
 LEFT=RIGHT=DOWN=SPACE=false;
 let pressedKey = [LEFT,RIGHT,DOWN,SPACE];
@@ -67,11 +67,6 @@ let renderLoop = setInterval(() => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     //Paint Squares main board
     paintSquares();
-
-    //Clear next square box
-    nextShapeCanvasctx.clearRect(0, 0, nextShapeCanvas.width, nextShapeCanvas.height);
-    //Paint next square box
-    paintNextSquareBox();
 }, 1000/fps);
 
 let updateLoop = setInterval(() => {
@@ -81,9 +76,7 @@ let updateLoop = setInterval(() => {
             finalTurnCounter++;
             if (finalTurnCounter > ups || fastFall) {
                 if (!checkBelowSquare()) {
-                    shapeHasLanded = true;
-                    fastFall = false;
-                    finalTurnCounter = 0;
+                    newTurn();
                 }
             }
         }
@@ -192,7 +185,6 @@ let updateLoop = setInterval(() => {
         nextShape();
         createShape(currentShape,8,0)
         shapeHasLanded = false;
-        
     }
     while (fastFall) {
         console.log("Fastfalling");
@@ -227,9 +219,7 @@ let updateLoop = setInterval(() => {
             console.log("Timed out");
         }
         if (fastFall && !movingDown) {
-            shapeHasLanded = true;
-            fastFall = false;
-            finalTurnCounter = 0;
+            newTurn();
         }
     }
     
@@ -238,24 +228,65 @@ let updateLoop = setInterval(() => {
 }, 1000/ups);
 
 
+function newTurn() {
+    shapeHasLanded = true;
+    fastFall = false;
+    finalTurnCounter = 0;
+    //Clear next square box
+    nextShapeCanvasctx.clearRect(0, 0, nextShapeCanvas.width, nextShapeCanvas.height);
+    //Paint next square box
+    paintNextSquareBox();
+}
+
 function paintNextSquareBox() {
+    //Fill background
+    nextShapeCanvasctx.globalAlpha = 0.25;
+    nextShapeCanvasctx.strokeStyle = "black";
+    nextShapeCanvasctx.lineWidth = 1;
+    nextShapeCanvasctx.fillStyle = "rgb(200, 200, 200)";
     for (let x = 0; x < nextShapeCanvas.width / cellSize; x++) {
         for (let y = 0; y < nextShapeCanvas.height / cellSize; y++) {
-            nextShapeCanvasctx.globalAlpha = 0.1;
-            nextShapeCanvasctx.strokeStyle = "black";
-            nextShapeCanvasctx.lineWidth = 1;
-            nextShapeCanvasctx.fillStyle = "rgb(20, 20, 20)";
             nextShapeCanvasctx.fillRect(cellSize * x, cellSize * y, cellSize, cellSize);
             nextShapeCanvasctx.strokeRect(cellSize * x, cellSize * y, cellSize, cellSize);
-            
         }
     }
-    createShape(next100Shapes[currentShapeNumber+1],1,1)
-
-
+    //Fill dividing line
     nextShapeCanvasctx.globalAlpha = 1;
     nextShapeCanvasctx.lineWidth = 2;
-    nextShapeCanvasctx.strokeRect(0, nextShapeCanvas.height/2,nextShapeCanvas.width,2)
+    nextShapeCanvasctx.strokeRect(0, nextShapeCanvas.height/2,nextShapeCanvas.width,2);
+
+    //Fill first shape
+    createPreviewShape(next100Shapes[currentShapeNumber+1],1,1);
+    console.log("Previewing next shape = " + next100Shapes[currentShapeNumber+1]);
+    nextShapeCanvasctx.globalAlpha = 1;
+    nextShapeCanvasctx.strokeStyle = "black";
+    nextShapeCanvasctx.lineWidth = 1;
+    nextShapeCanvasctx.fillStyle = "rgb(255, 64, 0)";
+    for (let x = 0; x < nextShapeCanvas.width/cellSize; x++) {
+        for (let y = 0; y < nextShapeCanvas.height/cellSize/2; y++) {
+            if(previewArray[x][y] > 0 ) {
+                nextShapeCanvasctx.fillRect(cellSize * x, cellSize * y, cellSize, cellSize);
+                nextShapeCanvasctx.strokeRect(cellSize * x, cellSize * y, cellSize, cellSize);
+            }
+        }
+    }
+
+    
+    createPreviewShape(next100Shapes[currentShapeNumber+2],8,1);
+    console.log("Previewing next shape = " + next100Shapes[currentShapeNumber+1]);
+    nextShapeCanvasctx.globalAlpha = 1;
+    nextShapeCanvasctx.strokeStyle = "black";
+    nextShapeCanvasctx.lineWidth = 1;
+    nextShapeCanvasctx.fillStyle = "rgb(255, 64, 0)";
+    for (let x = 0; x < nextShapeCanvas.width/cellSize; x++) {
+        for (let y = nextShapeCanvas.height/cellSize/2; y < nextShapeCanvas.height/cellSize; y++) {
+            if(previewArray[x][y] > 0 ) {
+                nextShapeCanvasctx.fillRect(cellSize * x, cellSize * y, cellSize, cellSize);
+                nextShapeCanvasctx.strokeRect(cellSize * x, cellSize * y, cellSize, cellSize);
+            }
+        }
+    }
+    
 }
 
 function paintSquares() {
@@ -355,7 +386,7 @@ function nextShape() {
 }
 
 function createShape(shape, xcoords, ycoords) {
-    console.log("Creating new shape = " + shape);
+    console.log("Creating new shape = " + shape + " at x,y " + xcoords + " " + ycoords);
     shapeCoords[0] = xcoords;
     shapeCoords[1] = ycoords;
     movingDown = true;
@@ -369,16 +400,16 @@ function createShape(shape, xcoords, ycoords) {
 }
 
 function createPreviewShape(shape, xcoords, ycoords) {
+    console.log(previewArray);
     console.log("Creating new previewShape = " + shape);
     previewShapeCoords[0] = xcoords;
     previewShapeCoords[1] = ycoords;
     
     if (shape == "square") {
-    
-        xArray[shapeCoords[0]][shapeCoords[1]] = 2;
-        xArray[shapeCoords[0]+1][shapeCoords[1]] = 2;
-        xArray[shapeCoords[0]][shapeCoords[1]+1] = 2;
-        xArray[shapeCoords[0]+1][shapeCoords[1]+1] = 2;
+        previewArray[previewShapeCoords[0]][previewShapeCoords[1]] = 2;
+        previewArray[previewShapeCoords[0]+1][previewShapeCoords[1]] = 2;
+        previewArray[previewShapeCoords[0]][previewShapeCoords[1]+1] = 2;
+        previewArray[previewShapeCoords[0]+1][previewShapeCoords[1]+1] = 2;
     }
 }
 
