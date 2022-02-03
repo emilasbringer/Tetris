@@ -35,6 +35,7 @@ let connectedBlocks = 0;
 let score = 0;
 let next100Shapes = [];
 let currentShapeNumber = 0;
+let previewArray = [];
 
 for (let i = 0; i < 100; i++) {
     next100Shapes[i] = randomShape();
@@ -42,6 +43,10 @@ for (let i = 0; i < 100; i++) {
 
 for (let i = 0; i < width/cellSize; i++) {
     xArray[i] = [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0];
+}
+
+for (let i = 0; i < nextShapeCanvas.width/cellSize; i++) {
+    previewArray[i] = [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0];
 }
 
 myCanvas.style.left = centerPage - 225 + "px";
@@ -356,6 +361,20 @@ function createShape(shape, xcoords, ycoords) {
     movingDown = true;
     
     if (shape == "square") {
+        xArray[shapeCoords[0]][shapeCoords[1]] = 2;
+        xArray[shapeCoords[0]+1][shapeCoords[1]] = 2;
+        xArray[shapeCoords[0]][shapeCoords[1]+1] = 2;
+        xArray[shapeCoords[0]+1][shapeCoords[1]+1] = 2;
+    }
+}
+
+function createPreviewShape(shape, xcoords, ycoords) {
+    console.log("Creating new previewShape = " + shape);
+    previewShapeCoords[0] = xcoords;
+    previewShapeCoords[1] = ycoords;
+    
+    if (shape == "square") {
+    
         xArray[shapeCoords[0]][shapeCoords[1]] = 2;
         xArray[shapeCoords[0]+1][shapeCoords[1]] = 2;
         xArray[shapeCoords[0]][shapeCoords[1]+1] = 2;
